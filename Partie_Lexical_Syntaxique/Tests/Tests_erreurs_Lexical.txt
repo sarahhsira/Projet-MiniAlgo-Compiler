@@ -1,0 +1,84 @@
+//Test : identificateur invalide
+
+PROGRAM Test
+DECL
+INTEGER : 3abc;
+ENDDECL
+BEGIN
+END
+
+//Test : identificateur invalide
+
+PROGRAM Test
+DECL
+INTEGER : 3abc;
+ENDDECL
+BEGIN
+END
+
+//Test : commentaire non fermé
+
+PROGRAM Test
+DECL
+INTEGER : a;
+/* commentaire non ferme
+ENDDECL
+BEGIN
+END
+erreur attendue
+Erreur Lexicale : commentaire non ferme
+
+
+// Test : symbole inconnu
+
+PROGRAM Test
+DECL
+INTEGER : a;
+ENDDECL
+BEGIN
+a = 5 @ 3;
+END
+
+erreur attendue
+Erreur Lexicale : symbole inconnu @
+
+
+//Test : entier hors limites
+
+PROGRAM Test
+DECL
+INTEGER : a;
+ENDDECL
+BEGIN
+a = 40000;
+END
+
+erreur attendue
+Erreur Lexicale : entier hors limites 40000
+
+
+//Test : constante entière mal formée
+
+PROGRAM Test
+DECL
+INTEGER : a;
+ENDDECL
+BEGIN
+a = (12a);
+END
+
+erreur attendue
+Erreur Lexicale : constante entiere mal formee
+
+//Test : constante réelle mal formée
+fichier test
+PROGRAM Test
+DECL
+FLOAT : a;
+ENDDECL
+BEGIN
+a = (12.a);
+END
+
+erreur attendue
+Erreur Lexicale : constante reelle mal formee
