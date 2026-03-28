@@ -1,84 +1,107 @@
-//Test : identificateur invalide
-
+//1. Identificateur invalide (commence par chiffre)
 PROGRAM Test
 DECL
-INTEGER : 3abc;
+INTEGER : 1A ;
 ENDDECL
 BEGIN
 END
 
-//Test : identificateur invalide
+✅Erreur attendue : Identificateur invalide
 
+//2. Identificateur trop long (> 8 caractères)
 PROGRAM Test
 DECL
-INTEGER : 3abc;
+INTEGER : variable_trop_longue ;
 ENDDECL
 BEGIN
 END
 
-//Test : commentaire non fermé
+✅ Erreur : Identificateur trop long
+
+//3. Identificateur avec symbole interdit
+PROGRAM Test
+DECL
+INTEGER : abc-def ;
+ENDDECL
+BEGIN
+END
+
+✅ Erreur : Symbole inconnu (-)
+
+
+// 4.1 Entier hors limites
+PROGRAM Test
+DECL
+CONST A = 40000 ;
+ENDDECL
+BEGIN
+END
+
+✅ Erreur :Entier hors limites
+
+
+// 4.2 Reel hors limites
+PROGRAM Test
+DECL
+CONST A = -32769.10 ;
+ENDDECL
+BEGIN
+END
+
+✅ Erreur :Reel hors limites
+
+
+//5. Entier signé SANS parenthèses 
+PROGRAM Test
+DECL
+CONST A = -5 ; // ou bien : CONST A = -3.14 ;
+ENDDECL
+BEGIN
+END
+
+✅ Erreur attendue: entier signe sans parentheses ou bien : reel signe sans parentheses 
+
+//7. Réel mal formé
 
 PROGRAM Test
 DECL
-INTEGER : a;
+CONST X = (3.) ;
+ENDDECL
+BEGIN
+END
+
+✅ Erreur :
+
+
+//8. Nombre + lettres
+PROGRAM Test
+DECL
+INTEGER : A ;
+ENDDECL
+BEGIN
+A = 123abc ;
+END
+
+✅ Erreur : Identificateur invalide
+
+//9. Symbole inconnu
+PROGRAM Test
+DECL
+INTEGER : A ;
+ENDDECL
+BEGIN
+A = 5 @ 3 ;
+END
+
+✅ Erreur : Symbole inconnu @
+
+//10. Commentaire non fermé 
+PROGRAM Test
+DECL
+INTEGER : A ;
 /* commentaire non ferme
 ENDDECL
 BEGIN
 END
-erreur attendue
-Erreur Lexicale : commentaire non ferme
 
-
-// Test : symbole inconnu
-
-PROGRAM Test
-DECL
-INTEGER : a;
-ENDDECL
-BEGIN
-a = 5 @ 3;
-END
-
-erreur attendue
-Erreur Lexicale : symbole inconnu @
-
-
-//Test : entier hors limites
-
-PROGRAM Test
-DECL
-INTEGER : a;
-ENDDECL
-BEGIN
-a = 40000;
-END
-
-erreur attendue
-Erreur Lexicale : entier hors limites 40000
-
-
-//Test : constante entière mal formée
-
-PROGRAM Test
-DECL
-INTEGER : a;
-ENDDECL
-BEGIN
-a = (12a);
-END
-
-erreur attendue
-Erreur Lexicale : constante entiere mal formee
-
-//Test : constante réelle mal formée
-fichier test
-PROGRAM Test
-DECL
-FLOAT : a;
-ENDDECL
-BEGIN
-a = (12.a);
-END
-
-erreur attendue
-Erreur Lexicale : constante reelle mal formee
+✅ Erreur : commentaire non ferme

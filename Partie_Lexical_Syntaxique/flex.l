@@ -61,31 +61,49 @@ char* token_courant=NULL;
 "[" { col+=strlen(yytext); token_courant=strdup(yytext); return CROCHET_OUVRANT; }
 "]" { col+=strlen(yytext); token_courant=strdup(yytext); return CROCHET_FERMANT; }
 
+\([+-]?[0-9]+\.\) {
+printf("Erreur Lexicale : ligne %d colonne %d\nType : reel mal forme\nElement : %s\n", nb_ligne, col, yytext);
+col += strlen(yytext);
+}
+
+\([+-]?\.[0-9]+\) {
+printf("Erreur Lexicale : ligne %d colonne %d\nType : reel mal forme\nElement : %s\n", nb_ligne, col, yytext);
+col += strlen(yytext);
+}
+
 
 \([+-]?[0-9]+\) {
-    int val;
-    if(sscanf(yytext,"(%d)", &val)!=1)
-         printf("Erreur Lexicale : ligne %d colonne %d\nType : Constante entiere mal formee\nElement : %s\n", nb_ligne,col,yytext);
-    else if(val < -32768 || val > 32767)
-        printf("Erreur Lexicale : ligne %d colonne %d Entier hors limites %s\n", nb_ligne,col,yytext);
+    int val = atoi(yytext + 1);
+
+    if(val < -32768 || val > 32767)
+        printf("Erreur Lexicale : ligne %d colonne %d\nType : entier hors limites\nElement : %s\n", nb_ligne, col, yytext);
     else {
         yylval.integer = val;
-        token_courant=strdup(yytext);
-        col+=strlen(yytext);
+        token_courant = strdup(yytext);
+        col += strlen(yytext);
         return CONST_ENTIERE;
     }
 }
 
+
 \([+-]?[0-9]+\.[0-9]+\) {
-    float val;
-    if(sscanf(yytext,"(%f)", &val)!=1)
-        printf("Erreur Lexicale : ligne %d colonne %d\nType : Constante reelle mal formee\nElement : %s\n", nb_ligne,col,yytext);
+    float val = atof(yytext + 1);
+
+    if(val < -32768 || val > 32767)
+        printf("Erreur Lexicale : ligne %d colonne %d\nType : reel hors limites\nElement : %s\n", nb_ligne, col, yytext);
     else {
-        yylval.float_val = val;
-        token_courant=strdup(yytext);
-        col+=strlen(yytext);
-        return CONST_REELLE;
+
+    yylval.float_val = val;
+    token_courant = strdup(yytext);
+    col += strlen(yytext);
+     return CONST_REELLE;
     }
+}
+
+
+[-+][0-9]+ {
+printf("Erreur Lexicale : ligne %d colonne %d\nType : entier signe sans parentheses\nElement : %s\n", nb_ligne, col, yytext);
+col += strlen(yytext);
 }
 
 [0-9]+ {
@@ -98,6 +116,10 @@ char* token_courant=NULL;
         col+=strlen(yytext);
         return CONST_ENTIERE;
     }
+}
+[-+][0-9]+\.[0-9]+ {
+printf("Erreur Lexicale : ligne %d colonne %d\nType : reel signe sans parentheses\nElement : %s\n", nb_ligne, col, yytext);
+col += strlen(yytext);
 }
 
 [0-9]+\.[0-9]+ {
@@ -113,6 +135,11 @@ printf("Erreur Lexicale : ligne %d colonne %d\nType : Identificateur invalide\nE
 col+=strlen(yytext);
 }
 
+[a-zA-Z][a-zA-Z0-9_]*-[a-zA-Z0-9_]+ {
+printf("Erreur Lexicale : ligne %d colonne %d\nType : Identificateur invalide (caractere interdit '-')\nElement : %s\n", nb_ligne, col, yytext);
+col += strlen(yytext);
+}
+
 [a-zA-Z][a-zA-Z0-9_]{8,} {
 printf("Erreur Lexicale : ligne %d colonne %d\nType : Identificateur trop long\nElement : %s\n",nb_ligne,col,yytext);
 col+=strlen(yytext);
@@ -124,8 +151,9 @@ col+=strlen(yytext);
 
 "/*"([^*]|\*+[^*/])*\*+"/" { }
 
-"/*"([^*]|\*+[^*/])*$ {
-printf("Erreur Lexicale : ligne %d commentaire non ferme\n",nb_ligne);
+"/*"([^*]|\*+[^*/])* {
+    printf("Erreur Lexicale : ligne %d colonne %d\nType : Commentaire non ferme\nElement : /*\n", nb_ligne, col);
+     return 0;
 }
 
 [\n] { nb_ligne++; col=1; }
