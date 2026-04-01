@@ -6,7 +6,7 @@ ENDDECL
 BEGIN
 END
 
-✅Erreur attendue : Identificateur invalide
+Erreur attendue : Identificateur invalide
 
 //2. Identificateur trop long (> 8 caractères)
 PROGRAM Test
@@ -16,7 +16,7 @@ ENDDECL
 BEGIN
 END
 
-✅ Erreur : Identificateur trop long
+Erreur : Identificateur trop long
 
 //3. Identificateur avec symbole interdit
 PROGRAM Test
@@ -26,7 +26,7 @@ ENDDECL
 BEGIN
 END
 
-✅ Erreur : Symbole inconnu (-)
+Erreur : Symbole inconnu (-)
 
 
 // 4.1 Entier hors limites
@@ -37,7 +37,7 @@ ENDDECL
 BEGIN
 END
 
-✅ Erreur :Entier hors limites
+Erreur :Entier hors limites
 
 
 // 4.2 Reel hors limites
@@ -48,7 +48,7 @@ ENDDECL
 BEGIN
 END
 
-✅ Erreur :Reel hors limites
+Erreur :Reel hors limites
 
 
 //5. Entier signé SANS parenthèses 
@@ -59,7 +59,7 @@ ENDDECL
 BEGIN
 END
 
-✅ Erreur attendue: entier signe sans parentheses ou bien : reel signe sans parentheses 
+Erreur attendue: entier signe sans parentheses ou bien : reel signe sans parentheses 
 
 //7. Réel mal formé
 
@@ -70,7 +70,7 @@ ENDDECL
 BEGIN
 END
 
-✅ Erreur :
+Erreur : Réel mal formé
 
 
 //8. Nombre + lettres
@@ -82,7 +82,7 @@ BEGIN
 A = 123abc ;
 END
 
-✅ Erreur : Identificateur invalide
+Erreur : Identificateur invalide
 
 //9. Symbole inconnu
 PROGRAM Test
@@ -93,7 +93,7 @@ BEGIN
 A = 5 @ 3 ;
 END
 
-✅ Erreur : Symbole inconnu @
+Erreur : Symbole inconnu @
 
 //10. Commentaire non fermé 
 PROGRAM Test
@@ -104,4 +104,4 @@ ENDDECL
 BEGIN
 END
 
-✅ Erreur : commentaire non ferme
+Erreur : commentaire non ferme
