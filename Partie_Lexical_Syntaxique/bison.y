@@ -116,7 +116,13 @@ expression PLUS expression
 
 void yyerror(const char *s)
 {
-printf("Erreur Syntaxique : ligne %d colonne %d element %s\n",nb_ligne,col,token_courant);
+    if (strcmp(s, "syntax error") == 0 && token_courant != NULL) {
+        printf("Erreur Syntaxique : ligne %d colonne %d - Point-virgule manquant après '%s'\n",
+            nb_ligne, col, token_courant);
+    } else {
+        printf("Erreur Syntaxique : ligne %d colonne %d element %s\n",
+            nb_ligne, col, token_courant);
+    }
 }
 
 int main()
