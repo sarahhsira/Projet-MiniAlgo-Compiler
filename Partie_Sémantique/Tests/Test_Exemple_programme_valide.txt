@@ -1,0 +1,16 @@
+PROGRAM Test
+DECL
+INTEGER : A, B ;
+FLOAT : X ;
+CONST MAX = 10 ;
+ENDDECL
+BEGIN
+A = 5 ;
+B = 3 ;
+IF (A > B) {
+WRITE(A);
+}
+ELSE {
+WRITE(B);
+}
+END

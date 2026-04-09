@@ -1,0 +1,66 @@
+//Cas correct
+PROGRAM test
+DECL
+INTEGER : x , y ;
+FLOAT : z ;
+INTEGER :T[10];
+CONST pi = 3.14 ;
+ENDDECL
+BEGIN
+x = 5 ;
+END
+
+
+-------------------------------------------
+
+//Cas Erreur 
+
+PROGRAM test
+DECL
+INTEGER : x, y;
+FLOAT : z;
+CONST a = 5000000;
+INTEGER : B;
+ENDDECL
+BEGIN
+
+x = 10;
+y = 3.5;
+
+z = 2.5;
+
+END
+
+---------------------------------
+
+PROGRAM TestTS
+DECL
+
+INTEGER : A, B ;
+FLOAT : 1X ;
+
+INTEGER : T[5] ;
+
+CONST PI = 3.14 ;
+CONST N = 10 ;
+CONST Z = (0) ;
+
+ENDDECL
+BEGIN
+
+A = 5 ;
+B = A + 3 ;
+
+X = 2.5 ;
+
+T[0] = 7 ;
+T[1] = A + B ;
+
+WRITE(A) ;
+WRITE(B) ;
+WRITE(X) ;
+
+END
+
+
+-------------------------------
