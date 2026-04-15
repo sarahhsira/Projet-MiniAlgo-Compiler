@@ -5,27 +5,24 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define TABLE_SIZE 1000
+#define TAILLE 1000
 
-typedef struct {
-    char name[20];
-    char code[20];
+typedef struct symbole {
+    char nom[50];
     char type[20];
-    float value;
-    int is_array;
-} Symbol;
+    char nature[20];   // variable | constante | kw | sep
+    float valeur;
+    int taille;
+    struct symbole* suivant;
+} symbole;
 
-extern Symbol idf_table[TABLE_SIZE];
-extern Symbol kw_table[TABLE_SIZE];
-extern Symbol sep_table[TABLE_SIZE];
+extern symbole* table[TAILLE];
 
-int hash(char* str);
-int insert(char entity[], char code[], char type[], float value, int is_array, int t);
-int search(char entity[], int t);
+int hash(char* nom);
+symbole* rechercher(char* nom);
 
-void insert_type(char entity[], char type[]);
-void insert_value(char entity[], float value);
+void inserer(char* nom, char* type, char* nature, float valeur, int taille);
 
-void print_all_tables();
+void afficher();
 
 #endif

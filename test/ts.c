@@ -1,102 +1,120 @@
 #include "ts.h"
 
-Symbol idf_table[TABLE_SIZE] = {0};
-Symbol kw_table[TABLE_SIZE] = {0};
-Symbol sep_table[TABLE_SIZE] = {0};
+symbole* table[TAILLE] = {NULL};
 
-int hash(char* str) {
-    int h = 0;
-    while (*str)
-        h = (h * 31 + *str++) % TABLE_SIZE;
-    return h;
+int hash(char* nom)
+{
+    int somme = 0;
+    for(int i = 0; nom[i] != '\0'; i++)
+        somme += nom[i];
+    return somme % TAILLE;
 }
 
-int insert(char entity[], char code[], char type[], float value, int is_array, int t) {
-    Symbol* table;
+symbole* rechercher(char* nom)
+{
+    int h = hash(nom);
+    symbole* temp = table[h];
 
-    switch (t) {
-        case 0: table = idf_table; break;
-        case 1: table = kw_table; break;
-        case 2: table = sep_table; break;
-        default: return -1;
+    while(temp)
+    {
+        if(strcmp(temp->nom, nom) == 0)
+            return temp;
+        temp = temp->suivant;
     }
-
-    int index = hash(entity);
-
-    while (table[index].name[0] != '\0') {
-        if (strcmp(table[index].name, entity) == 0)
-            return -1;
-        index = (index + 1) % TABLE_SIZE;
-    }
-
-    strcpy(table[index].name, entity);
-    strcpy(table[index].code, code);
-    strcpy(table[index].type, type);
-    table[index].value = value;
-    table[index].is_array = is_array;
-
-    return index;
+    return NULL;
 }
 
-int search(char entity[], int t) {
-    Symbol* table;
+void inserer(char* nom, char* type, char* nature, float valeur, int taille)
+{
+    symbole* exist = rechercher(nom);
+    if(exist != NULL) return;
 
-    switch (t) {
-        case 0: table = idf_table; break;
-        case 1: table = kw_table; break;
-        case 2: table = sep_table; break;
-        default: return -1;
-    }
+    int h = hash(nom);
 
-    int index = hash(entity);
+    symbole* nouv = (symbole*)malloc(sizeof(symbole));
 
-    while (table[index].name[0] != '\0') {
-        if (strcmp(table[index].name, entity) == 0)
-            return index;
-        index = (index + 1) % TABLE_SIZE;
-    }
+    strcpy(nouv->nom, nom);
+    strcpy(nouv->type, type);
+    strcpy(nouv->nature, nature);
 
-    return -1;
+    nouv->valeur = valeur;
+    nouv->taille = taille;
+
+    nouv->suivant = table[h];
+    table[h] = nouv;
 }
 
-void insert_type(char entity[], char type[]) {
-    int pos = search(entity, 0);
-    if (pos != -1)
-        strcpy(idf_table[pos].type, type);
-}
+void afficher()
+{
+    printf("\n===== TABLE DES SYMBOLES =====\n");
 
-void insert_value(char entity[], float value) {
-    int pos = search(entity, 0);
-    if (pos != -1)
-        idf_table[pos].value = value;
-}
+    printf("\n--- VARIABLES ---\n");
+    printf("%-15s %-10s %-12s %-10s\n", "Nom", "Type", "Nature", "Valeur");
+    printf("--------------------------------------------------\n");
 
-void print_all_tables() {
-    int i;
-
-    printf("\n===== TABLE IDF =====\n");
-    for (i = 0; i < TABLE_SIZE; i++) {
-        if (idf_table[i].name[0] != '\0') {
-            printf("%s | %s | %s | %f | %d\n",
-                idf_table[i].name,
-                idf_table[i].code,
-                idf_table[i].type,
-                idf_table[i].value,
-                idf_table[i].is_array);
+    for(int i = 0; i < TAILLE; i++)
+    {
+        symbole* t = table[i];
+        while(t)
+        {
+            if(strcmp(t->nature, "variable") == 0)
+            {
+                printf("%-15s %-10s %-12s %-10s\n",
+                       t->nom,
+                       t->type,
+                       t->nature,
+                       "-");
+            }
+            t = t->suivant;
         }
     }
 
-    printf("\n===== TABLE KW =====\n");
-    for (i = 0; i < TABLE_SIZE; i++) {
-        if (kw_table[i].name[0] != '\0') {
-            printf("%s | %s\n", kw_table[i].name, kw_table[i].code);
+    printf("\n--- CONSTANTES ---\n");
+    printf("%-15s %-10s %-12s %-10s\n", "Nom", "Type", "Nature", "Valeur");
+    printf("--------------------------------------------------\n");
+
+    for(int i = 0; i < TAILLE; i++)
+    {
+        symbole* t = table[i];
+        while(t)
+        {
+            if(strcmp(t->nature, "constante") == 0)
+            {
+                printf("%-15s %-10s %-12s %-10.2f\n",
+                       t->nom,
+                       t->type,
+                       t->nature,
+                       t->valeur);
+            }
+            t = t->suivant;
         }
     }
 
-    printf("\n===== TABLE SEP =====\n");
-    for (i = 0; i < TABLE_SIZE; i++) {
-        if (sep_table[i].name[0] != '\0') {
-            printf("%s | %s\n", sep_table[i].name, sep_table[i].code);
+    printf("\n--- KEYWORDS ---\n");
+    printf("%-15s %-10s\n", "Nom", "Nature");
+
+    for(int i = 0; i < TAILLE; i++)
+    {
+        symbole* t = table[i];
+        while(t)
+        {
+            if(strcmp(t->nature, "kw") == 0)
+                printf("%-15s %-10s\n", t->nom, t->nature);
+            t = t->suivant;
+        }
+    }
+
+    printf("\n--- SEPARATEURS ---\n");
+    printf("%-15s %-10s\n", "Nom", "Nature");
+
+    for(int i = 0; i < TAILLE; i++)
+    {
+        symbole* t = table[i];
+        while(t)
+        {
+            if(strcmp(t->nature, "sep") == 0)
+                printf("%-15s %-10s\n", t->nom, t->nature);
+            t = t->suivant;
         }
     }
 }
