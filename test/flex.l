@@ -164,7 +164,12 @@ printf("Erreur Lexicale : ligne %d colonne %d\nType : Identificateur trop long\n
 col+=strlen(yytext);
 }
 
-[a-zA-Z][a-zA-Z0-9_]{0,7} { inserer(yytext, "IDF", "variable", 0, 0);col+=strlen(yytext); yylval.str=strdup(yytext); token_courant=strdup(yytext); return IDENTIFIANT; }
+[a-zA-Z][a-zA-Z0-9_]{0,7} {
+    col+=strlen(yytext);
+    yylval.str=strdup(yytext);
+    token_courant=strdup(yytext);
+    return IDENTIFIANT;
+}
 
 "//".* { }
 

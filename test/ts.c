@@ -48,7 +48,7 @@ void afficher()
 {
     printf("\n===== TABLE DES SYMBOLES =====\n");
 
-    printf("\n--- VARIABLES ---\n");
+    printf("\n--- IDFS ---\n");
     printf("%-15s %-10s %-12s %-10s\n", "Nom", "Type", "Nature", "Valeur");
     printf("--------------------------------------------------\n");
 
@@ -57,13 +57,13 @@ void afficher()
         symbole* t = table[i];
         while(t)
         {
-            if(strcmp(t->nature, "variable") == 0)
+            if(strcmp(t->nature, "variable") == 0 || strcmp(t->nature, "-") == 0)
             {
                 printf("%-15s %-10s %-12s %-10s\n",
-                       t->nom,
-                       t->type,
-                       t->nature,
-                       "-");
+       t->nom,
+       t->type,
+       t->nature,
+       strcmp(t->nature,"variable")==0 ? "-" : "-");
             }
             t = t->suivant;
         }

@@ -7,6 +7,7 @@
 extern int nb_ligne;
 extern int col;
 extern char* token_courant;
+char* type_courant = NULL;
 
 void yyerror(const char *s);
 int yylex();
@@ -37,6 +38,7 @@ char* str;
 %token <integer> CONST_ENTIERE
 %token <float_val> CONST_REELLE
 %token <str> IDENTIFIANT
+%type <str> type
 %type <float_val> valeur
 
 %left PLUS MOINS
@@ -50,7 +52,7 @@ char* str;
 
 programme:
 PROGRAM IDENTIFIANT DECL declarations ENDDECL TBEGIN instructions TEND{
-    inserer($2, "PROGRAM", "programme", 0, 0);
+    inserer($2, "IDF", "-", 0, 0);
 }
 ;
 
@@ -60,26 +62,34 @@ declarations declaration
 ;
 
 declaration:
-type DEUX_POINTS liste_identifiants POINT_VIRGULE
+type DEUX_POINTS liste_identifiants POINT_VIRGULE {
+    type_courant = $1;
+}
 | type DEUX_POINTS IDENTIFIANT CROCHET_OUVRANT CONST_ENTIERE CROCHET_FERMANT POINT_VIRGULE
 | CONST IDENTIFIANT EGAL valeur POINT_VIRGULE {
-    inserer($2, "IDF", "constante", $4, 0);
+    inserer($2, "CONST", "constante", $4, 0);
 }
 ;
 
 type:
-ENTIER
-| REEL
+ENTIER { $$ = "INTEGER"; }
+| REEL { $$ = "FLOAT"; }
 ;
 
 liste_identifiants:
-IDENTIFIANT
-| IDENTIFIANT VIRGULE liste_identifiants
+IDENTIFIANT {
+    if(type_courant != NULL)
+        inserer($1, type_courant, "variable", 0, 0);
+}
+| IDENTIFIANT VIRGULE liste_identifiants {
+    iif(type_courant != NULL)
+        inserer($1, type_courant, "variable", 0, 0);
+}
 ;
 
 valeur:
-CONST_ENTIERE
-| CONST_REELLE
+CONST_ENTIERE { $$ = (float)$1; }
+| CONST_REELLE { $$ = $1; }
 ;
 
 instructions:
