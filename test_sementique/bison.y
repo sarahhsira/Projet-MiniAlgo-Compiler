@@ -38,6 +38,7 @@ char* str;
 %token <integer> CONST_ENTIERE
 %token <float_val> CONST_REELLE
 %token <str> IDENTIFIANT
+%type <float_val> expression
 %type <str> type
 %type <float_val> valeur
 
@@ -62,17 +63,23 @@ declarations declaration
 ;
 
 declaration:
-type DEUX_POINTS liste_identifiants POINT_VIRGULE
-{
-    current_type = NULL; // reset after use
-}
-| type DEUX_POINTS IDENTIFIANT CROCHET_OUVRANT CONST_ENTIERE CROCHET_FERMANT POINT_VIRGULE
-{
-    inserer($3, current_type, "tableau", 0, $5);
-}
-| CONST IDENTIFIANT EGAL valeur POINT_VIRGULE {
-    inserer($2, "CONST", "constante", $4, 0);
-}
+    type DEUX_POINTS liste_identifiants POINT_VIRGULE
+    {
+        current_type = NULL;
+    }
+|    type DEUX_POINTS IDENTIFIANT CROCHET_OUVRANT CONST_ENTIERE CROCHET_FERMANT POINT_VIRGULE
+    {
+        if($5 <= 0)
+            printf("Erreur Semantique : taille tableau invalide pour %s\n", $3);
+        else if(strcmp(current_type, "BOOLEAN") == 0)
+            printf("Erreur Semantique : type de tableau non supporte BOOLEAN\n");
+        else
+            inserer($3, current_type, "tableau", 0, $5);
+    }
+|   CONST IDENTIFIANT EGAL valeur POINT_VIRGULE
+    {
+        inserer($2, "CONST", "constante", $4, 0);
+    }
 ;
 
 type:
@@ -108,22 +115,29 @@ instructions instruction
 instruction:
 IDENTIFIANT EGAL expression POINT_VIRGULE
 {
+    symbole* s = rechercher($1);
+
     if(!estDeclare($1))
-        printf("Erreur Semantique : variable %s non declaree\n", $1);
+        printf("Erreur Semantique : %s non declare\n", $1);
 
     else if(estConstante($1))
         printf("Erreur Semantique : modification de constante %s\n", $1);
 
-    else if(estTableau($1))
-        printf("Erreur Semantique : %s est un tableau, utilisation invalide\n", $1);
+    else if(s && strcmp(s->type, "INTEGER") == 0 )
+        printf("Erreur Semantique : incompatibilite de type pour %s\n", $1);
 }
 | IDENTIFIANT CROCHET_OUVRANT expression CROCHET_FERMANT EGAL expression POINT_VIRGULE
 {
+    symbole* s = rechercher($1);
+
     if(!estDeclare($1))
         printf("Erreur Semantique : tableau %s non declare\n", $1);
 
     else if(!estTableau($1))
         printf("Erreur Semantique : %s n'est pas un tableau\n", $1);
+
+    else if($3 >= s->taille)
+        printf("Erreur Semantique : indice hors limites pour %s\n", $1);
 }
 | IF PARENTHESE_OUVRANTE expression PARENTHESE_FERMANTE ACCOLADE_OUVRANTE instructions ACCOLADE_FERMANTE
 | IF PARENTHESE_OUVRANTE expression PARENTHESE_FERMANTE ACCOLADE_OUVRANTE instructions ACCOLADE_FERMANTE ELSE ACCOLADE_OUVRANTE instructions ACCOLADE_FERMANTE
@@ -142,6 +156,11 @@ expression PLUS expression
 | expression MOINS expression
 | expression FOIS expression
 | expression DIVISE expression
+| expression DIVISE CONST_ENTIERE
+{
+    if($3 == 0)
+        printf("Erreur Semantique : division par zero\n");
+}
 | expression ET expression
 | expression OU expression
 | expression PLUS_GRAND expression
@@ -150,11 +169,14 @@ expression PLUS expression
 | expression INF_EGAL expression
 | expression EGAL_EGAL expression
 | expression DIFF expression
-| NON expression
-| CONST_ENTIERE
-| CONST_REELLE
-| IDENTIFIANT
-| PARENTHESE_OUVRANTE expression PARENTHESE_FERMANTE
+| NON expression {
+    $$ = !$2;
+}
+| CONST_ENTIERE { $$ = $1; }
+| CONST_REELLE  { $$ = $1; }
+| IDENTIFIANT   { $$ = 0; }
+
+| PARENTHESE_OUVRANTE expression PARENTHESE_FERMANTE { $$ = $2; }
 ;
 
 %%
