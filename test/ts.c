@@ -27,8 +27,14 @@ symbole* rechercher(char* nom)
 void inserer(char* nom, char* type, char* nature, float valeur, int taille)
 {
     symbole* exist = rechercher(nom);
-    if(exist != NULL) return;
-
+    if(exist != NULL) {
+    // update if it's array
+    if(strcmp(nature, "tableau") == 0) {
+        strcpy(exist->nature, "tableau");
+        exist->taille = taille;
+    }
+    return;
+}
     int h = hash(nom);
 
     symbole* nouv = (symbole*)malloc(sizeof(symbole));
@@ -90,6 +96,26 @@ void afficher()
         }
     }
 
+    printf("\n--- TABLEAUX ---\n");
+printf("%-15s %-10s %-12s %-10s\n", "Nom", "Type", "Nature", "Taille");
+printf("--------------------------------------------------\n");
+
+for(int i = 0; i < TAILLE; i++)
+{
+    symbole* t = table[i];
+    while(t)
+    {
+        if(strcmp(t->nature, "tableau") == 0)
+        {
+            printf("%-15s %-10s %-12s %-10d\n",
+                   t->nom,
+                   t->type,
+                   t->nature,
+                   t->taille);
+        }
+        t = t->suivant;
+    }
+}
     printf("\n--- KEYWORDS ---\n");
     printf("%-15s %-10s\n", "Nom", "Nature");
 

@@ -67,6 +67,9 @@ type DEUX_POINTS liste_identifiants POINT_VIRGULE
     current_type = NULL; // reset after use
 }
 | type DEUX_POINTS IDENTIFIANT CROCHET_OUVRANT CONST_ENTIERE CROCHET_FERMANT POINT_VIRGULE
+{
+    inserer($3, current_type, "tableau", 0, $5);
+}
 | CONST IDENTIFIANT EGAL valeur POINT_VIRGULE {
     inserer($2, "CONST", "constante", $4, 0);
 }
