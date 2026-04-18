@@ -7,7 +7,7 @@
 extern int nb_ligne;
 extern int col;
 extern char* token_courant;
-char* type_courant = NULL;
+char* current_type = NULL;
 
 void yyerror(const char *s);
 int yylex();
@@ -62,8 +62,9 @@ declarations declaration
 ;
 
 declaration:
-type DEUX_POINTS liste_identifiants POINT_VIRGULE {
-    type_courant = $1;
+type DEUX_POINTS liste_identifiants POINT_VIRGULE
+{
+    current_type = NULL; // reset after use
 }
 | type DEUX_POINTS IDENTIFIANT CROCHET_OUVRANT CONST_ENTIERE CROCHET_FERMANT POINT_VIRGULE
 | CONST IDENTIFIANT EGAL valeur POINT_VIRGULE {
@@ -72,18 +73,16 @@ type DEUX_POINTS liste_identifiants POINT_VIRGULE {
 ;
 
 type:
-ENTIER { $$ = "INTEGER"; }
-| REEL { $$ = "FLOAT"; }
+ENTIER { current_type = "INTEGER"; $$ = "INTEGER"; }
+| REEL { current_type = "FLOAT"; $$ = "FLOAT"; }
 ;
 
 liste_identifiants:
 IDENTIFIANT {
-    if(type_courant != NULL)
-        inserer($1, type_courant, "variable", 0, 0);
+    inserer($1, current_type, "variable", 0, 0);
 }
-| IDENTIFIANT VIRGULE liste_identifiants {
-    iif(type_courant != NULL)
-        inserer($1, type_courant, "variable", 0, 0);
+| liste_identifiants VIRGULE IDENTIFIANT {
+    inserer($3, current_type, "variable", 0, 0);
 }
 ;
 
