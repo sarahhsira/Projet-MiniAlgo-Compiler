@@ -1,0 +1,25 @@
+PROGRAM Test
+DECL
+    INTEGER : A, B, C ;
+    FLOAT : X ;
+    CONST MAX = 10 ;
+ENDDECL
+BEGIN
+    A = 5 ;
+    B = 3 ;
+    X = 2.5 ;
+    C = A + B ;
+    IF (A > B) {
+        C = A - B ;
+    }
+    IF (A > 0) {
+        B = A + 1 ;
+    } ELSE {
+        B = 0 ;
+    }
+    WHILE (B > 0) {
+        B = B - 1 ;
+    }
+    READ(A) ;
+    WRITE(C) ;
+END
