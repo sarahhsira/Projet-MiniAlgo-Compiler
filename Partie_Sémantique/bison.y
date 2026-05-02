@@ -7,17 +7,10 @@
 extern int nb_ligne;
 extern int col;
 extern char* token_courant;
-
-char type_courant[10];
-
-int erreur_lex = 0;
-int erreur_syn = 0;
-int erreur_sem = 0;
+char* current_type = NULL;
 
 void yyerror(const char *s);
-
 int yylex();
-
 %}
 
 %union{
@@ -25,9 +18,6 @@ int integer;
 float float_val;
 char* str;
 }
-
-%type <float_val> valeur
-%type <float_val> expression
 
 %start programme
 
@@ -48,6 +38,9 @@ char* str;
 %token <integer> CONST_ENTIERE
 %token <float_val> CONST_REELLE
 %token <str> IDENTIFIANT
+%type <float_val> expression
+%type <str> type
+%type <float_val> valeur
 
 %left PLUS MOINS
 %left FOIS DIVISE
@@ -59,7 +52,9 @@ char* str;
 %%
 
 programme:
-PROGRAM IDENTIFIANT DECL declarations ENDDECL TBEGIN instructions TEND
+PROGRAM IDENTIFIANT DECL declarations ENDDECL TBEGIN instructions TEND{
+    inserer($2, "IDF", "-", 0, 0);
+}
 ;
 
 declarations:
@@ -69,89 +64,46 @@ declarations declaration
 
 declaration:
     type DEUX_POINTS liste_identifiants POINT_VIRGULE
-    | type DEUX_POINTS IDENTIFIANT CROCHET_OUVRANT CONST_ENTIERE CROCHET_FERMANT POINT_VIRGULE
     {
-         if($5 <= 0)
-    {
-        erreur_sem = 1;
-        printf("\nErreur semantique : taille de tableau invalide pour %s\n", $3);
+        current_type = NULL;
     }
-    else
-        if(strcmp(type_courant, "ENTIER") != 0 &&
-           strcmp(type_courant, "REEL") != 0)
-        {
-            erreur_sem = 1;
-            printf("\nErreur semantique : type d'element invalide pour tableau %s\n", $3);
-        }
-        else
-        {
-            symbole* s = rechercher($3);
-
-            if(s != NULL)
-            {
-                erreur_sem = 1;
-                printf("\nErreur semantique : double declaration de %s\n", $3);
-            }
-            else
-            {
-                inserer($3, type_courant, "tableau", 0, $5);
-            }
-        }
-    }
-    | CONST IDENTIFIANT EGAL valeur POINT_VIRGULE
+|    type DEUX_POINTS IDENTIFIANT CROCHET_OUVRANT CONST_ENTIERE CROCHET_FERMANT POINT_VIRGULE
     {
-        symbole* s = rechercher($2);
-
-        if(s != NULL)
-        {
-            erreur_sem = 1;
-            printf("\nErreur semantique : double declaration de %s\n", $2);
-        }
+        if($5 <= 0)
+            printf("Erreur Semantique : taille tableau invalide pour %s\n", $3);
+        else if(strcmp(current_type, "BOOLEAN") == 0)
+            printf("Erreur Semantique : type de tableau non supporte BOOLEAN\n");
         else
-        {
-            inserer($2, type_courant, "constante", $4, 0);
-        }
+            inserer($3, current_type, "tableau", 0, $5);
+    }
+|   CONST IDENTIFIANT EGAL valeur POINT_VIRGULE
+    {
+        inserer($2, "CONST", "constante", $4, 0);
     }
 ;
 
-
 type:
-ENTIER { strcpy(type_courant, "ENTIER"); }
-| REEL { strcpy(type_courant, "REEL"); }
+ENTIER { current_type = "INTEGER"; $$ = "INTEGER"; }
+| REEL { current_type = "FLOAT"; $$ = "FLOAT"; }
 ;
 
 liste_identifiants:
-IDENTIFIANT  {
-    symbole* s = rechercher($1);
-
-    if(s != NULL)
-    {
-        erreur_sem = 1;
-        printf("\nErreur semantique : double declaration de %s\n", $1);
-    }
+IDENTIFIANT {
+    if(estDeclare($1))
+        printf("Erreur Semantique : double declaration de %s\n", $1);
     else
-    {
-        inserer($1, type_courant, "variable", 0, 1);
-    }
+        inserer($1, current_type, "variable", 0, 0);
 }
-| IDENTIFIANT VIRGULE liste_identifiants {
-    symbole* s = rechercher($1);
-
-    if(s != NULL)
-    {
-        erreur_sem = 1;
-        printf("\nErreur semantique : double declaration de %s\n", $1);
-    }
+| liste_identifiants VIRGULE IDENTIFIANT {
+    if(estDeclare($3))
+        printf("Erreur Semantique : double declaration de %s\n", $3);
     else
-    {
-        inserer($1, type_courant, "variable", 0, 1);
-    }
+        inserer($3, current_type, "variable", 0, 0);
 }
 ;
 
-
 valeur:
-CONST_ENTIERE { $$ = $1; }
+CONST_ENTIERE { $$ = (float)$1; }
 | CONST_REELLE { $$ = $1; }
 ;
 
@@ -161,96 +113,73 @@ instructions instruction
 ;
 
 instruction:
-IDENTIFIANT EGAL expression POINT_VIRGULE  {
+IDENTIFIANT EGAL expression POINT_VIRGULE
+{
     symbole* s = rechercher($1);
 
-    // variable non declaree
-    if(s == NULL) {
-        erreur_sem = 1;
-        printf("\nErreur semantique : variable %s non declaree\n", $1);
-    }
-    else {
-        // modification constante
-        if(strcmp(s->nature, "constante") == 0) {
-            erreur_sem = 1;
-            printf("\nErreur semantique : modification d'une constante %s\n", $1);
-        }
+    if(!estDeclare($1))
+        printf("Erreur Semantique : %s non declare\n", $1);
 
-        // incompatibilite type
-        else if(strcmp(s->type, "ENTIER") == 0 && $3 != (int)$3) {
-            erreur_sem = 1;
-            printf("\nErreur semantique : incompatibilite de type pour %s\n", $1);
-        }
+    else if(estConstante($1))
+        printf("Erreur Semantique : modification de constante %s\n", $1);
 
-        else {
-            s->valeur = $3;
-        }
-    }
+    else if(s && strcmp(s->type, "INTEGER") == 0 && $3 != (int)$3)
+        printf("Erreur Semantique : incompatibilite de type pour %s (reel affecte a un entier)\n", $1);
 }
-
 | IDENTIFIANT CROCHET_OUVRANT expression CROCHET_FERMANT EGAL expression POINT_VIRGULE
- {
+{
     symbole* s = rechercher($1);
 
-    if(s == NULL) {
-        erreur_sem = 1;
-        printf("\nErreur semantique : tableau %s non declare\n", $1);
-    }
-    else if(strcmp(s->nature, "tableau") != 0) {
-        erreur_sem = 1;
-        printf("\nErreur semantique : %s n'est pas un tableau\n", $1);
-    }
-    else if($3 < 0 || $3 >= s->taille) {
-        erreur_sem = 1;
-        printf("\nErreur semantique : indice hors limites pour %s\n", $1);
-    }
-}
+    if(!estDeclare($1))
+        printf("Erreur Semantique : tableau %s non declare\n", $1);
 
+    else if(!estTableau($1))
+        printf("Erreur Semantique : %s n'est pas un tableau\n", $1);
+
+    else if($3 >= s->taille)
+        printf("Erreur Semantique : indice hors limites pour %s\n", $1);
+}
 | IF PARENTHESE_OUVRANTE expression PARENTHESE_FERMANTE ACCOLADE_OUVRANTE instructions ACCOLADE_FERMANTE
 | IF PARENTHESE_OUVRANTE expression PARENTHESE_FERMANTE ACCOLADE_OUVRANTE instructions ACCOLADE_FERMANTE ELSE ACCOLADE_OUVRANTE instructions ACCOLADE_FERMANTE
 | FOR PARENTHESE_OUVRANTE IDENTIFIANT DEUX_POINTS expression DEUX_POINTS expression DEUX_POINTS expression PARENTHESE_FERMANTE ACCOLADE_OUVRANTE instructions ACCOLADE_FERMANTE
 | WHILE PARENTHESE_OUVRANTE expression PARENTHESE_FERMANTE ACCOLADE_OUVRANTE instructions  ACCOLADE_FERMANTE
 | READ PARENTHESE_OUVRANTE IDENTIFIANT PARENTHESE_FERMANTE POINT_VIRGULE
+{
+    if(!estDeclare($3))
+        printf("Erreur Semantique : %s non declare\n", $3);
+}
 | WRITE PARENTHESE_OUVRANTE IDENTIFIANT PARENTHESE_FERMANTE POINT_VIRGULE
 ;
 
 expression:
-expression PLUS expression { $$ = $1 + $3; }
-| expression MOINS expression { $$ = $1 - $3; }
-| expression FOIS expression { $$ = $1 * $3; }
-| expression DIVISE expression {
-    if($3 == 0) {
-        erreur_sem = 1;
-        printf("\nErreur semantique : division par zero\n");
-        $$ = 0;
-    } else {
-        $$ = $1 / $3;
-     }
+expression PLUS expression      { $$ = $1 + $3; }
+| expression MOINS expression   { $$ = $1 - $3; }
+| expression FOIS expression    { $$ = $1 * $3; }
+| expression DIVISE expression
+{
+    if($3 == 0)
+        printf("Erreur Semantique : division par zero\n");
+    $$ = ($3 != 0) ? $1 / $3 : 0;
 }
-
-| expression ET expression  { $$ = $1 && $3; }
-| expression OU expression  { $$ = $1 || $3; }
-| expression PLUS_GRAND expression { $$ = $1 > $3; }
+| expression ET expression      { $$ = $1 && $3; }
+| expression OU expression      { $$ = $1 || $3; }
+| expression PLUS_GRAND expression  { $$ = $1 > $3; }
 | expression PLUS_PETIT expression  { $$ = $1 < $3; }
-| expression SUP_EGAL expression { $$ = $1 >= $3; }
-| expression INF_EGAL expression  { $$ = $1 <= $3; }
-| expression EGAL_EGAL expression { $$ = $1 == $3; }
-| expression DIFF expression { $$ = $1 != $3; }
-| NON expression  { $$ = !$2; }
+| expression SUP_EGAL expression    { $$ = $1 >= $3; }
+| expression INF_EGAL expression    { $$ = $1 <= $3; }
+| expression EGAL_EGAL expression   { $$ = $1 == $3; }
+| expression DIFF expression        { $$ = $1 != $3; }
+| NON expression                    { $$ = !$2; }
 | CONST_ENTIERE { $$ = $1; }
-| CONST_REELLE { $$ = $1; }
-| IDENTIFIANT {
+| CONST_REELLE  { $$ = $1; }
+| IDENTIFIANT
+{
     symbole* s = rechercher($1);
-
-    if(s == NULL) {
-        erreur_sem = 1;
-        printf("\nErreur semantique : variable %s non declaree\n", $1);
-        $$ = 0;
-    } else {
-        $$ = s->valeur;
-    }
+    if(s && strcmp(s->nature, "constante") == 0)
+        $$ = s->valeur;   // constante déclarée → on récupère sa valeur
+    else
+        $$ = -1;          // variable → valeur sentinelle "inconnue"
 }
-
 | PARENTHESE_OUVRANTE expression PARENTHESE_FERMANTE { $$ = $2; }
 ;
 
@@ -258,41 +187,26 @@ expression PLUS expression { $$ = $1 + $3; }
 
 void yyerror(const char *s)
 {
-erreur_syn = 1;
-printf("\nErreur Syntaxique : ligne %d colonne %d element %s\n\n",nb_ligne,col,token_courant);
+    if (strcmp(s, "syntax error") == 0 && token_courant != NULL) {
+        printf("Erreur Syntaxique : ligne %d colonne %d - Point-virgule manquant après '%s'\n",
+            nb_ligne, col, token_courant);
+    } else {
+        printf("Erreur Syntaxique : ligne %d colonne %d element %s\n",
+            nb_ligne, col, token_courant);
+    }
 }
 
 int main()
 {
-    for(int i=0;i<TAILLE;i++) table[i]=NULL;
-
-    int res = yyparse();
-
-    //Analyse Lexical
-    if(erreur_lex)
-{
-    printf("\nErreur lexical detectee. \n\n");
-}
-
-    // Analyse syntaxique
-    if(res == 0)
-        printf("Analyse syntaxique terminee avec succes.\n\n");
+    if(yyparse()==0)
+    {
+        printf("Analyse syntaxique terminée avec succès.\n");
+        printf("Analyses lexicale et syntaxique réussies.\n");
+        afficher();
+    }
     else
-        printf("Erreur syntaxique detectee.\n\n");
-
-    // Analyse semantique
-    if(erreur_sem || erreur_syn || erreur_lex || res != 0)
-        printf("Erreur semantique detectee.\n\n");
-    else
-        printf("Analyse semantique terminee avec succes.\n\n");
-
-    // global
-    if(res != 0 || erreur_sem || erreur_lex || erreur_syn)
-        printf("Erreur d'analyse.\n\n");
-    else
-        printf("Analyse complete reussie.\n\n");
-
-    afficher();
-
+    {
+        printf("Erreur d'analyse.\n");
+    }
     return 0;
 }

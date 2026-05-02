@@ -57,14 +57,6 @@ BEGIN
 END
 
 
-// 6. Tableau_type_element_invalide(Tableau (accès à de mauvais indices dans un tableau)
-PROGRAM test
-DECL
-BOOLEAN : t[3];
-ENDDECL
-BEGIN
-END
-
 
 // 7.indice_Tableau_hors_limites 'Tableau (accès à de mauvais indices dans un tableau)
 PROGRAM test

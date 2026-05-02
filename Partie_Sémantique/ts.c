@@ -1,22 +1,23 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include "ts.h"
+#include <stddef.h>
 
-symbole* table[TAILLE];
+symbole* table[TAILLE] = {NULL};
 
-int hash(char* nom) {
+int hash(char* nom)
+{
     int somme = 0;
-    for(int i=0; nom[i]!='\0'; i++)
+    for(int i = 0; nom[i] != '\0'; i++)
         somme += nom[i];
     return somme % TAILLE;
 }
 
-symbole* rechercher(char* nom) {
+symbole* rechercher(char* nom)
+{
     int h = hash(nom);
     symbole* temp = table[h];
 
-    while(temp) {
+    while(temp)
+    {
         if(strcmp(temp->nom, nom) == 0)
             return temp;
         temp = temp->suivant;
@@ -24,105 +25,143 @@ symbole* rechercher(char* nom) {
     return NULL;
 }
 
-void inserer(char* nom, char* type, char* nature, float valeur, int taille) {
-    if(rechercher(nom) != NULL) {
-        printf("Erreur semantique : double declaration de %s\n", nom);
-        return;
+void inserer(char* nom, char* type, char* nature, float valeur, int taille)
+{
+    symbole* exist = rechercher(nom);
+    if(exist != NULL) {
+    if(strcmp(nature, "variable") == 0 || strcmp(nature, "tableau") == 0)
+    {
+        printf("Erreur Semantique : double declaration de %s\n", nom);
     }
-
+    return;
+}
     int h = hash(nom);
-    symbole* nouv = malloc(sizeof(symbole));
+
+    symbole* nouv = (symbole*)malloc(sizeof(symbole));
 
     strcpy(nouv->nom, nom);
     strcpy(nouv->type, type);
     strcpy(nouv->nature, nature);
+
     nouv->valeur = valeur;
     nouv->taille = taille;
 
     nouv->suivant = table[h];
     table[h] = nouv;
 }
+int estDeclare(char* nom)
+{
+    return rechercher(nom) != NULL;
+}
 
-void afficher() {
+int estConstante(char* nom)
+{
+    symbole* s = rechercher(nom);
+    return (s && strcmp(s->nature, "constante") == 0);
+}
+
+int estTableau(char* nom)
+{
+    symbole* s = rechercher(nom);
+    return (s && strcmp(s->nature, "tableau") == 0);
+}
+
+int estVariable(char* nom)
+{
+    symbole* s = rechercher(nom);
+    return (s && strcmp(s->nature, "variable") == 0);
+}
+void afficher()
+{
     printf("\n===== TABLE DES SYMBOLES =====\n");
 
-    printf("\n--- CONSTANTES ---\n");
-    printf("%-20s %-10s %-10s %-10s %-10s\n",
-           "Nom", "Type", "Nature", "Valeur", "Taille");
+    printf("\n--- IDFS ---\n");
+    printf("%-15s %-10s %-12s %-10s\n", "Nom", "Type", "Nature", "Valeur");
+    printf("--------------------------------------------------\n");
 
-    printf("-------------------------------------------------------------\n");
-
-    for(int i=0; i<TAILLE; i++) {
-        symbole* temp = table[i];
-        while(temp) {
-
-            if(strcmp(temp->nature, "constante") == 0) {
-
-                if(temp->valeur == (int)temp->valeur)
-                    printf("%-20s %-10s %-10s %-10.0f %-10d\n",
-                           temp->nom, temp->type, temp->nature,
-                           temp->valeur, temp->taille);
-                else
-                    printf("%-20s %-10s %-10s %-10.2f %-10d\n",
-                           temp->nom, temp->type, temp->nature,
-                           temp->valeur, temp->taille);
+    for(int i = 0; i < TAILLE; i++)
+    {
+        symbole* t = table[i];
+        while(t)
+        {
+            if(strcmp(t->nature, "variable") == 0 || strcmp(t->nature, "-") == 0)
+            {
+                printf("%-15s %-10s %-12s %-10s\n",
+       t->nom,
+       t->type,
+       t->nature,
+       strcmp(t->nature,"variable")==0 ? "-" : "-");
             }
-
-            temp = temp->suivant;
+            t = t->suivant;
         }
     }
 
-    printf("\n--- VARIABLES ---\n");
-    printf("%-20s %-10s %-10s %-10s %-10s\n",
-           "Nom", "Type", "Nature", "Valeur", "Taille");
+    printf("\n--- CONSTANTES ---\n");
+    printf("%-15s %-10s %-12s %-10s\n", "Nom", "Type", "Nature", "Valeur");
+    printf("--------------------------------------------------\n");
 
-    printf("-------------------------------------------------------------\n");
-
-    for(int i=0; i<TAILLE; i++) {
-        symbole* temp = table[i];
-        while(temp) {
-
-            if(strcmp(temp->nature, "variable") == 0) {
-
-                if(temp->valeur == 0)
-                    printf("%-20s %-10s %-10s %-10s %-10d\n",
-                           temp->nom, temp->type, temp->nature,
-                           "-", temp->taille);
-                else if(temp->valeur == (int)temp->valeur)
-                    printf("%-20s %-10s %-10s %-10.0f %-10d\n",
-                           temp->nom, temp->type, temp->nature,
-                           temp->valeur, temp->taille);
-                else
-                    printf("%-20s %-10s %-10s %-10.2f %-10d\n",
-                           temp->nom, temp->type, temp->nature,
-                           temp->valeur, temp->taille);
+    for(int i = 0; i < TAILLE; i++)
+    {
+        symbole* t = table[i];
+        while(t)
+        {
+            if(strcmp(t->nature, "constante") == 0)
+            {
+                printf("%-15s %-10s %-12s %-10.2f\n",
+                       t->nom,
+                       t->type,
+                       t->nature,
+                       t->valeur);
             }
-
-            temp = temp->suivant;
+            t = t->suivant;
         }
     }
 
     printf("\n--- TABLEAUX ---\n");
-    printf("%-20s %-10s %-10s %-10s %-10s\n",
-           "Nom", "Type", "Nature", "Valeur", "Taille");
+printf("%-15s %-10s %-12s %-10s\n", "Nom", "Type", "Nature", "Taille");
+printf("--------------------------------------------------\n");
 
-    printf("-------------------------------------------------------------\n");
+for(int i = 0; i < TAILLE; i++)
+{
+    symbole* t = table[i];
+    while(t)
+    {
+        if(strcmp(t->nature, "tableau") == 0)
+        {
+            printf("%-15s %-10s %-12s %-10d\n",
+                   t->nom,
+                   t->type,
+                   t->nature,
+                   t->taille);
+        }
+        t = t->suivant;
+    }
+}
+    printf("\n--- KEYWORDS ---\n");
+    printf("%-15s %-10s\n", "Nom", "Nature");
 
-    for(int i=0; i<TAILLE; i++) {
-        symbole* temp = table[i];
-        while(temp) {
+    for(int i = 0; i < TAILLE; i++)
+    {
+        symbole* t = table[i];
+        while(t)
+        {
+            if(strcmp(t->nature, "kw") == 0)
+                printf("%-15s %-10s\n", t->nom, t->nature);
+            t = t->suivant;
+        }
+    }
 
-            if(strcmp(temp->nature, "tableau") == 0) {
+    printf("\n--- SEPARATEURS ---\n");
+    printf("%-15s %-10s\n", "Nom", "Nature");
 
-                printf("%-20s %-10s %-10s %-10s %-10d\n",
-                       temp->nom,
-                       temp->type,
-                       temp->nature,
-                       "-",
-                       temp->taille);
-            }
-
-            temp = temp->suivant;
+    for(int i = 0; i < TAILLE; i++)
+    {
+        symbole* t = table[i];
+        while(t)
+        {
+            if(strcmp(t->nature, "sep") == 0)
+                printf("%-15s %-10s\n", t->nom, t->nature);
+            t = t->suivant;
         }
     }
 }
