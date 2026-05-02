@@ -119,8 +119,7 @@ instructions instruction
 marqueur_if:
   IF PARENTHESE_OUVRANTE expression PARENTHESE_FERMANTE ACCOLADE_OUVRANTE
   {
-      sprintf(tmp, "%d", qc);   /* op = numéro courant */
-      quadr(tmp, "?", $3, "");  /* BZ : (num, ?, condition, ) */
+      quadr("BZ", "?", $3, "");
       $<integer>$ = qc - 1;
   }
 ;
@@ -157,54 +156,39 @@ IDENTIFIANT EGAL expression POINT_VIRGULE
 
 | marqueur_if instructions ACCOLADE_FERMANTE %prec THEN
 {
-    /* patcher arg1 du BZ avec adresse après IF */
     sprintf(tmp, "%d", qc);
     update_quad($<integer>1, 1, tmp);
 }
 
 | marqueur_if instructions ACCOLADE_FERMANTE ELSE
 {
-    /* quadruplet BR : op=numéro, arg1=? à patcher */
-    sprintf(tmp, "%d", qc);
-    quadr(tmp, "?", "", "");
+    quadr("BR", "?", "", "");
     int q_br = qc - 1;
-
-    /* patcher BZ → début ELSE */
     sprintf(tmp, "%d", qc);
-    update_quad($<integer>1, 1, tmp);
-
+    update_quad($<integer>1, 1, tmp);   /* BZ → début ELSE */
     $<integer>$ = q_br;
 }
 ACCOLADE_OUVRANTE instructions ACCOLADE_FERMANTE
 {
-    /* patcher BR → après ELSE */
     sprintf(tmp, "%d", qc);
-    update_quad($<integer>5, 1, tmp);
+    update_quad($<integer>5, 1, tmp);   /* BR → après ELSE */
 }
-
 | WHILE
 {
-    $<integer>$ = qc;   /* sauvegarder début condition */
+    $<integer>$ = qc;
 }
 PARENTHESE_OUVRANTE expression PARENTHESE_FERMANTE
 ACCOLADE_OUVRANTE
 {
-    /* BZ : op=numéro, arg1=? à patcher */
-    sprintf(tmp, "%d", qc);
-    quadr(tmp, "?", $4, "");
+    quadr("BZ", "?", $4, "");
     $<integer>$ = qc - 1;
 }
 instructions ACCOLADE_FERMANTE
 {
-    /* BR retour début : op=numéro, arg1=début */
+    sprintf(tmp, "%d", $<integer>2);
+    quadr("BR", tmp, "", "");           /* BR retour début */
     sprintf(tmp, "%d", qc);
-    char debut[20];
-    sprintf(debut, "%d", $<integer>2);
-    quadr(tmp, debut, "", "");
-
-    /* patcher BZ → après boucle */
-    sprintf(tmp, "%d", qc);
-    update_quad($<integer>7, 1, tmp);
+    update_quad($<integer>7, 1, tmp);   /* BZ → après boucle */
 }
 
 | FOR PARENTHESE_OUVRANTE IDENTIFIANT DEUX_POINTS expression
@@ -218,12 +202,9 @@ ACCOLADE_OUVRANTE instructions ACCOLADE_FERMANTE
     char* t = nouveau_temp();
     quadr("+", $3, $9, t);
     quadr("=", t, "", $3);
-    sprintf(tmp, "%d", qc);
-    char debut[20];
-    sprintf(debut, "%d", $<integer>11);
-    quadr(tmp, debut, "", "");
+    sprintf(tmp, "%d", $<integer>11);
+    quadr("BR", tmp, "", "");
 }
-
 | READ PARENTHESE_OUVRANTE IDENTIFIANT PARENTHESE_FERMANTE POINT_VIRGULE
 {
     if(!estDeclare($3))
