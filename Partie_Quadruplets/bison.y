@@ -3,21 +3,22 @@
 #include <stdlib.h>
 #include <string.h>
 #include "ts.h"
-#include "quad.h"   
+#include "quad.h"
 
 extern int nb_ligne;
 extern int col;
 extern char* token_courant;
 char* current_type = NULL;
+char tmp[20];   /* buffer pour les numéros de sauts */
 
 void yyerror(const char *s);
 int yylex();
 %}
 
 %union{
-int integer;
-float float_val;
-char* str;
+    int integer;
+    float float_val;
+    char* str;
 }
 
 %start programme
@@ -114,13 +115,16 @@ instructions:
 instructions instruction
 |
 ;
+
 marqueur_if:
   IF PARENTHESE_OUVRANTE expression PARENTHESE_FERMANTE ACCOLADE_OUVRANTE
   {
-      int q = ajouter_quad("BRFALSE", $3, "-", "?");
-      $<integer>$ = q;
+      sprintf(tmp, "%d", qc);   /* op = numéro courant */
+      quadr(tmp, "?", $3, "");  /* BZ : (num, ?, condition, ) */
+      $<integer>$ = qc - 1;
   }
 ;
+
 instruction:
 IDENTIFIANT EGAL expression POINT_VIRGULE
 {
@@ -130,9 +134,9 @@ IDENTIFIANT EGAL expression POINT_VIRGULE
     else if(estConstante($1))
         printf("Erreur Semantique : modification de constante %s\n", $1);
     else if(s && strcmp(s->type, "INTEGER") == 0 && atof($3) != (int)atof($3))
-        printf("Erreur Semantique : incompatibilite de type pour %s (reel affecte a un entier)\n", $1);
+        printf("Erreur Semantique : incompatibilite de type pour %s\n", $1);
     else
-        ajouter_quad("=", $3, "-", $1);
+        quadr("=", $3, "", $1);
 }
 
 | IDENTIFIANT CROCHET_OUVRANT expression CROCHET_FERMANT EGAL expression POINT_VIRGULE
@@ -147,65 +151,77 @@ IDENTIFIANT EGAL expression POINT_VIRGULE
     else {
         char index_result[50];
         sprintf(index_result, "%s[%s]", $1, $3);
-        ajouter_quad("=", $6, "-", index_result);
+        quadr("=", $6, "", index_result);
     }
 }
 
 | marqueur_if instructions ACCOLADE_FERMANTE %prec THEN
 {
-    char cible[10];
-    sprintf(cible, "%d", qc);
-    patcher($<integer>1, cible);
+    /* patcher arg1 du BZ avec adresse après IF */
+    sprintf(tmp, "%d", qc);
+    update_quad($<integer>1, 1, tmp);
 }
 
 | marqueur_if instructions ACCOLADE_FERMANTE ELSE
 {
-    int q_br = ajouter_quad("BR", "-", "-", "?");
-    char cible[10];
-    sprintf(cible, "%d", qc);
-    patcher($<integer>1, cible);
+    /* quadruplet BR : op=numéro, arg1=? à patcher */
+    sprintf(tmp, "%d", qc);
+    quadr(tmp, "?", "", "");
+    int q_br = qc - 1;
+
+    /* patcher BZ → début ELSE */
+    sprintf(tmp, "%d", qc);
+    update_quad($<integer>1, 1, tmp);
+
     $<integer>$ = q_br;
 }
 ACCOLADE_OUVRANTE instructions ACCOLADE_FERMANTE
 {
-    char cible[10];
-    sprintf(cible, "%d", qc);
-    patcher($<integer>5, cible);
+    /* patcher BR → après ELSE */
+    sprintf(tmp, "%d", qc);
+    update_quad($<integer>5, 1, tmp);
 }
 
-| FOR PARENTHESE_OUVRANTE IDENTIFIANT DEUX_POINTS expression DEUX_POINTS expression DEUX_POINTS expression PARENTHESE_FERMANTE
+| WHILE
 {
-    ajouter_quad("=", $5, "-", $3);
+    $<integer>$ = qc;   /* sauvegarder début condition */
+}
+PARENTHESE_OUVRANTE expression PARENTHESE_FERMANTE
+ACCOLADE_OUVRANTE
+{
+    /* BZ : op=numéro, arg1=? à patcher */
+    sprintf(tmp, "%d", qc);
+    quadr(tmp, "?", $4, "");
+    $<integer>$ = qc - 1;
+}
+instructions ACCOLADE_FERMANTE
+{
+    /* BR retour début : op=numéro, arg1=début */
+    sprintf(tmp, "%d", qc);
+    char debut[20];
+    sprintf(debut, "%d", $<integer>2);
+    quadr(tmp, debut, "", "");
+
+    /* patcher BZ → après boucle */
+    sprintf(tmp, "%d", qc);
+    update_quad($<integer>7, 1, tmp);
+}
+
+| FOR PARENTHESE_OUVRANTE IDENTIFIANT DEUX_POINTS expression
+  DEUX_POINTS expression DEUX_POINTS expression PARENTHESE_FERMANTE
+{
+    quadr("=", $5, "", $3);
     $<integer>$ = qc;
 }
 ACCOLADE_OUVRANTE instructions ACCOLADE_FERMANTE
 {
     char* t = nouveau_temp();
-    ajouter_quad("+", $3, $9, t);
-    ajouter_quad("=", t, "-", $3);
-    char debut[10];
+    quadr("+", $3, $9, t);
+    quadr("=", t, "", $3);
+    sprintf(tmp, "%d", qc);
+    char debut[20];
     sprintf(debut, "%d", $<integer>11);
-    ajouter_quad("BR", "-", "-", debut);
-}
-
-| WHILE
-{
-    $<integer>$ = qc;
-}
-PARENTHESE_OUVRANTE expression PARENTHESE_FERMANTE
-ACCOLADE_OUVRANTE
-{
-    int q = ajouter_quad("BRFALSE", $4, "-", "?");
-    $<integer>$ = q;
-}
-instructions ACCOLADE_FERMANTE
-{
-    char debut[10];
-    sprintf(debut, "%d", $<integer>2);
-    ajouter_quad("BR", "-", "-", debut);
-    char cible[10];
-    sprintf(cible, "%d", qc);
-    patcher($<integer>7, cible);
+    quadr(tmp, debut, "", "");
 }
 
 | READ PARENTHESE_OUVRANTE IDENTIFIANT PARENTHESE_FERMANTE POINT_VIRGULE
@@ -213,12 +229,12 @@ instructions ACCOLADE_FERMANTE
     if(!estDeclare($3))
         printf("Erreur Semantique : %s non declare\n", $3);
     else
-        ajouter_quad("READ", $3, "-", "-");
+        quadr("READ", $3, "", "");
 }
 
 | WRITE PARENTHESE_OUVRANTE IDENTIFIANT PARENTHESE_FERMANTE POINT_VIRGULE
 {
-    ajouter_quad("WRITE", $3, "-", "-");
+    quadr("WRITE", $3, "", "");
 }
 ;
 
@@ -227,19 +243,19 @@ expression:
   expression PLUS expression
   {
       char* t = nouveau_temp();
-      ajouter_quad("+", $1, $3, t);
+      quadr("+", $1, $3, t);
       $$ = t;
   }
 | expression MOINS expression
   {
       char* t = nouveau_temp();
-      ajouter_quad("-", $1, $3, t);
+      quadr("-", $1, $3, t);
       $$ = t;
   }
 | expression FOIS expression
   {
       char* t = nouveau_temp();
-      ajouter_quad("*", $1, $3, t);
+      quadr("*", $1, $3, t);
       $$ = t;
   }
 | expression DIVISE expression
@@ -251,61 +267,61 @@ expression:
               printf("Erreur Semantique : division par zero\n");
       }
       char* t = nouveau_temp();
-      ajouter_quad("/", $1, $3, t);
+      quadr("/", $1, $3, t);
       $$ = t;
   }
 | expression ET expression
   {
       char* t = nouveau_temp();
-      ajouter_quad("&&", $1, $3, t);
+      quadr("&&", $1, $3, t);
       $$ = t;
   }
 | expression OU expression
   {
       char* t = nouveau_temp();
-      ajouter_quad("||", $1, $3, t);
+      quadr("||", $1, $3, t);
       $$ = t;
   }
 | expression PLUS_GRAND expression
   {
       char* t = nouveau_temp();
-      ajouter_quad(">", $1, $3, t);
+      quadr(">", $1, $3, t);
       $$ = t;
   }
 | expression PLUS_PETIT expression
   {
       char* t = nouveau_temp();
-      ajouter_quad("<", $1, $3, t);
+      quadr("<", $1, $3, t);
       $$ = t;
   }
 | expression SUP_EGAL expression
   {
       char* t = nouveau_temp();
-      ajouter_quad(">=", $1, $3, t);
+      quadr(">=", $1, $3, t);
       $$ = t;
   }
 | expression INF_EGAL expression
   {
       char* t = nouveau_temp();
-      ajouter_quad("<=", $1, $3, t);
+      quadr("<=", $1, $3, t);
       $$ = t;
   }
 | expression EGAL_EGAL expression
   {
       char* t = nouveau_temp();
-      ajouter_quad("==", $1, $3, t);
+      quadr("==", $1, $3, t);
       $$ = t;
   }
 | expression DIFF expression
   {
       char* t = nouveau_temp();
-      ajouter_quad("!=", $1, $3, t);
+      quadr("!=", $1, $3, t);
       $$ = t;
   }
 | NON expression
   {
       char* t = nouveau_temp();
-      ajouter_quad("!", $2, "-", t);
+      quadr("!", $2, "", t);
       $$ = t;
   }
 | CONST_ENTIERE
@@ -350,7 +366,7 @@ int main()
         printf("Analyse syntaxique terminée avec succès.\n");
         printf("Analyses lexicale et syntaxique réussies.\n");
         afficher();
-        afficher_quads();
+        print_quad();
     }
     else
     {

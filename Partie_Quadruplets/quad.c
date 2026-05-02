@@ -1,8 +1,25 @@
 #include "quad.h"
 
-Quadruplet quads[MAX_QUAD];
+qdr quad[1000];
 int qc = 0;
-int temp_count = 0;
+static int temp_count = 0;
+
+void quadr(char op[], char arg1[], char arg2[], char result[])
+{
+    strcpy(quad[qc].op,     op);
+    strcpy(quad[qc].arg1,   arg1);
+    strcpy(quad[qc].arg2,   arg2);
+    strcpy(quad[qc].result, result);
+    qc++;
+}
+
+void update_quad(int index, int pos, char value[])
+{
+    if      (pos == 1) strcpy(quad[index].op,     value);
+    else if (pos == 2) strcpy(quad[index].arg1,   value);
+    else if (pos == 3) strcpy(quad[index].arg2,   value);
+    else if (pos == 4) strcpy(quad[index].result, value);
+}
 
 char* nouveau_temp()
 {
@@ -11,27 +28,13 @@ char* nouveau_temp()
     return t;
 }
 
-int ajouter_quad(char* op, char* arg1, char* arg2, char* result)
-{
-    strcpy(quads[qc].op,     op     ? op     : "-");
-    strcpy(quads[qc].arg1,   arg1   ? arg1   : "-");
-    strcpy(quads[qc].arg2,   arg2   ? arg2   : "-");
-    strcpy(quads[qc].result, result ? result : "-");
-    return qc++;
-}
-
-void patcher(int index, char* cible)
-{
-    strcpy(quads[index].result, cible);
-}
-
-void afficher_quads()
+void print_quad()
 {
     printf("\n********************* Les Quadruplets ***********************\n");
     for(int i = 0; i < qc; i++)
     {
         printf("\n%d - ( %s  ,  %s  ,  %s  ,  %s )",
-               i, quads[i].op, quads[i].arg1, quads[i].arg2, quads[i].result);
+               i, quad[i].op, quad[i].arg1, quad[i].arg2, quad[i].result);
         printf("\n------------------------------------------------------------");
     }
     printf("\n");
