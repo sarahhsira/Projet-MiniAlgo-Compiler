@@ -20,6 +20,9 @@ BEGIN
     WHILE (B > 0) {
         B = B - 1 ;
     }
+    FOR (A : 1 : 10 : 1) {
+        C = C + A ;
+    }
     READ(A) ;
     WRITE(C) ;
 END

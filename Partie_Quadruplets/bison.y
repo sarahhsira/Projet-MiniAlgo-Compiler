@@ -157,7 +157,7 @@ IDENTIFIANT EGAL expression POINT_VIRGULE
 | marqueur_if instructions ACCOLADE_FERMANTE %prec THEN
 {
     sprintf(tmp, "%d", qc);
-    update_quad($<integer>1, 1, tmp);
+    update_quad($<integer>1, 2, tmp);
 }
 
 | marqueur_if instructions ACCOLADE_FERMANTE ELSE
@@ -165,13 +165,13 @@ IDENTIFIANT EGAL expression POINT_VIRGULE
     quadr("BR", "?", "", "");
     int q_br = qc - 1;
     sprintf(tmp, "%d", qc);
-    update_quad($<integer>1, 1, tmp);   /* BZ → début ELSE */
+    update_quad($<integer>1, 2, tmp);   /* BZ → début ELSE */
     $<integer>$ = q_br;
 }
 ACCOLADE_OUVRANTE instructions ACCOLADE_FERMANTE
 {
     sprintf(tmp, "%d", qc);
-    update_quad($<integer>5, 1, tmp);   /* BR → après ELSE */
+    update_quad($<integer>5, 2, tmp);   /* BR → après ELSE */
 }
 | WHILE
 {
@@ -188,7 +188,7 @@ instructions ACCOLADE_FERMANTE
     sprintf(tmp, "%d", $<integer>2);
     quadr("BR", tmp, "", "");           /* BR retour début */
     sprintf(tmp, "%d", qc);
-    update_quad($<integer>7, 1, tmp);   /* BZ → après boucle */
+    update_quad($<integer>7, 2, tmp);   /* BZ → après boucle */
 }
 
 | FOR PARENTHESE_OUVRANTE IDENTIFIANT DEUX_POINTS expression
