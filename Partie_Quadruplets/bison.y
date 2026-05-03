@@ -43,6 +43,7 @@ int yylex();
 %type <str> expression // résultat = nom du temporaire ou identifiant
 %type <str> type
 %type <float_val> valeur
+%type <integer> marqueur_for_cond marqueur_for_bz
 
 %left OU
 %left ET
@@ -123,7 +124,19 @@ marqueur_if:
       $<integer>$ = qc - 1;
   }
 ;
+marqueur_for_cond:
+/* vide */
+{
+    $$ = qc;   /* sauvegarde position de la condition */
+}
+;
 
+marqueur_for_bz:
+/* vide */
+{
+    $$ = qc - 1;   /* sauvegarde index du BZ (déjà généré juste avant) */
+}
+;
 instruction:
 IDENTIFIANT EGAL expression POINT_VIRGULE
 {
@@ -194,16 +207,30 @@ instructions ACCOLADE_FERMANTE
 | FOR PARENTHESE_OUVRANTE IDENTIFIANT DEUX_POINTS expression
   DEUX_POINTS expression DEUX_POINTS expression PARENTHESE_FERMANTE
 {
-    quadr("=", $5, "", $3);
-    $<integer>$ = qc;
+    quadr("=", $5, "", $3);          /* i = debut */
 }
+marqueur_for_cond                    /* $12 = position condition */
+{
+    /* génère la condition : i <= fin */
+    char* t_cond = nouveau_temp();
+    quadr("<=", $3, $9, t_cond);
+    quadr("BZ", "?", t_cond, "");   /* BZ à patcher */
+}
+marqueur_for_bz                      /* $14 = index du BZ */
 ACCOLADE_OUVRANTE instructions ACCOLADE_FERMANTE
 {
+    /* incrément */
     char* t = nouveau_temp();
-    quadr("+", $3, $9, t);
+    quadr("+", $3, $7, t);
     quadr("=", t, "", $3);
-    sprintf(tmp, "%d", $<integer>11);
+
+    /* BR → retour à la condition */
+    sprintf(tmp, "%d", $<integer>12);
     quadr("BR", tmp, "", "");
+
+    /* patch BZ → après la boucle */
+    sprintf(tmp, "%d", qc);
+    update_quad($<integer>14, 2, tmp);
 }
 | READ PARENTHESE_OUVRANTE IDENTIFIANT PARENTHESE_FERMANTE POINT_VIRGULE
 {
