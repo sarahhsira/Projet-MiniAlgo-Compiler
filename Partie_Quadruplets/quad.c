@@ -39,3 +39,39 @@ void print_quad()
     }
     printf("\n");
 }
+
+
+PileControle pile_if;
+PileControle pile_while;
+
+void init_pile(PileControle* p) {
+    p->capacity = 100;
+    p->data = (int*)malloc(p->capacity * sizeof(int));
+    p->top = -1;
+}
+
+void push_pile(PileControle* p, int val) {
+    if (p->top >= p->capacity - 1) {
+        p->capacity *= 2;
+        p->data = (int*)realloc(p->data, p->capacity * sizeof(int));
+    }
+    p->data[++p->top] = val;
+}
+
+int pop_pile(PileControle* p) {
+    if (p->top >= 0) {
+        return p->data[p->top--];
+    }
+    return -1;
+}
+
+int top_pile(PileControle* p) {
+    if (p->top >= 0) {
+        return p->data[p->top];
+    }
+    return -1;
+}
+
+int is_empty_pile(PileControle* p) {
+    return (p->top == -1);
+}
