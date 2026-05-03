@@ -11,14 +11,6 @@ extern char* token_courant;
 char* current_type = NULL;
 char tmp[20];   /* buffer pour les numéros de sauts */
 
-
-/* Initialiser les piles au début */
-void init_all_stacks() {
-    init_pile(&pile_if);
-    init_pile(&pile_while);
-}
-
-
 void yyerror(const char *s);
 int yylex();
 %}
@@ -51,7 +43,6 @@ int yylex();
 %type <str> expression // résultat = nom du temporaire ou identifiant
 %type <str> type
 %type <float_val> valeur
-%type <integer> else_part
 
 %left OU
 %left ET
@@ -125,21 +116,12 @@ instructions instruction
 |
 ;
 
-
-else_part:
-ELSE
-{
-    quadr("BR", "?", "", "");
-    push_pile(&pile_if, qc - 1);
-}
-ACCOLADE_OUVRANTE instructions ACCOLADE_FERMANTE
-{
-    $$ = qc;
-}
-|
-{
-    $$ = -1;
-}
+marqueur_if:
+  IF PARENTHESE_OUVRANTE expression PARENTHESE_FERMANTE ACCOLADE_OUVRANTE
+  {
+      quadr("BZ", "?", $3, "");
+      $<integer>$ = qc - 1;
+  }
 ;
 
 instruction:
@@ -172,74 +154,57 @@ IDENTIFIANT EGAL expression POINT_VIRGULE
     }
 }
 
-/* ========== IF UNIQUE (gère IF et IF ELSE) ========== */
-| IF PARENTHESE_OUVRANTE expression PARENTHESE_FERMANTE
+| marqueur_if instructions ACCOLADE_FERMANTE %prec THEN
 {
-    quadr("BZ", "?", $3, "");
-    push_pile(&pile_if, qc - 1);
-}
-ACCOLADE_OUVRANTE instructions ACCOLADE_FERMANTE else_part
-{
-    int bz_addr = pop_pile(&pile_if);
-
-    if($9 != -1) {
-        sprintf(tmp, "%d", $9);
-        update_quad(bz_addr, 2, tmp);
-        int br_addr = pop_pile(&pile_if);
-        sprintf(tmp, "%d", qc);
-        update_quad(br_addr, 2, tmp);
-    } else {
-        sprintf(tmp, "%d", qc);
-        update_quad(bz_addr, 2, tmp);
-    }
+    sprintf(tmp, "%d", qc);
+    update_quad($<integer>1, 2, tmp);
 }
 
-
-
-/* ========== WHILE AVEC PILE ========== */
-| WHILE
+| marqueur_if instructions ACCOLADE_FERMANTE ELSE
 {
-    push_pile(&pile_while, qc);
-}
-PARENTHESE_OUVRANTE expression PARENTHESE_FERMANTE
-{
-    quadr("BZ", "?", $4, "");
-    push_pile(&pile_while, qc - 1);
+    quadr("BR", "?", "", "");
+    int q_br = qc - 1;
+    sprintf(tmp, "%d", qc);
+    update_quad($<integer>1, 2, tmp);   /* BZ → début ELSE */
+    $<integer>$ = q_br;
 }
 ACCOLADE_OUVRANTE instructions ACCOLADE_FERMANTE
 {
-    int debut = pop_pile(&pile_while);
-    sprintf(tmp, "%d", debut);
-    quadr("BR", tmp, "", "");
-    int adr_bz = pop_pile(&pile_while);
     sprintf(tmp, "%d", qc);
-    update_quad(adr_bz, 2, tmp);
+    update_quad($<integer>5, 2, tmp);   /* BR → après ELSE */
+}
+| WHILE
+{
+    $<integer>$ = qc;
+}
+PARENTHESE_OUVRANTE expression PARENTHESE_FERMANTE
+ACCOLADE_OUVRANTE
+{
+    quadr("BZ", "?", $4, "");
+    $<integer>$ = qc - 1;
+}
+instructions ACCOLADE_FERMANTE
+{
+    sprintf(tmp, "%d", $<integer>2);
+    quadr("BR", tmp, "", "");           /* BR retour début */
+    sprintf(tmp, "%d", qc);
+    update_quad($<integer>7, 2, tmp);   /* BZ → après boucle */
 }
 
-/* ========== FOR AVEC PILE ========== */
 | FOR PARENTHESE_OUVRANTE IDENTIFIANT DEUX_POINTS expression
   DEUX_POINTS expression DEUX_POINTS expression PARENTHESE_FERMANTE
 {
     quadr("=", $5, "", $3);
-    push_pile(&pile_while, qc);
-    char* cond_temp = nouveau_temp();
-    quadr(">", $3, $9, cond_temp);
-    quadr("BZ", "?", cond_temp, "");
-    push_pile(&pile_while, qc - 1);
+    $<integer>$ = qc;
 }
 ACCOLADE_OUVRANTE instructions ACCOLADE_FERMANTE
 {
-    char* inc_temp = nouveau_temp();
-    quadr("+", $3, $7, inc_temp);
-    quadr("=", inc_temp, "", $3);
-    int debut = pop_pile(&pile_while);
-    sprintf(tmp, "%d", debut);
+    char* t = nouveau_temp();
+    quadr("+", $3, $9, t);
+    quadr("=", t, "", $3);
+    sprintf(tmp, "%d", $<integer>11);
     quadr("BR", tmp, "", "");
-    int adr_bz = pop_pile(&pile_while);
-    sprintf(tmp, "%d", qc);
-    update_quad(adr_bz, 2, tmp);
 }
-
 | READ PARENTHESE_OUVRANTE IDENTIFIANT PARENTHESE_FERMANTE POINT_VIRGULE
 {
     if(!estDeclare($3))
@@ -377,10 +342,6 @@ void yyerror(const char *s)
 
 int main()
 {
-
-    /* INITIALISER LES PILES */
-    init_all_stacks();
-
     if(yyparse()==0)
     {
         printf("Analyse syntaxique terminée avec succès.\n");
