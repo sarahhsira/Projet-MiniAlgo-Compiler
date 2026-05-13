@@ -1,0 +1,33 @@
+PROGRAM TESTOPT
+
+DECL
+
+INTEGER : A,B,C,D,I,X,Y,Z;
+FLOAT : F;
+
+ENDDECL
+
+BEGIN
+
+A = 5 ;
+B = 10 ;
+
+C = A + B ;
+
+D = A + B ;
+
+X = 4 * 2 ;
+
+Y = X + 0 ;
+
+Z = A * 2 ;
+
+I = 0 ;
+
+WHILE (I < 3)
+{
+    F = A + B ;
+    I = I + 1 ;
+}
+
+END
