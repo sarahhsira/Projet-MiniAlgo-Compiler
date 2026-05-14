@@ -5,6 +5,7 @@
 #include "ts.h"
 #include "quad.h"
 #include "optimisation.h"
+#include "asm8086.h"
 
 extern int nb_ligne;
 extern int col;
@@ -378,6 +379,8 @@ int main()
         print_quad();
         optimiser();
         print_quad_optimise();
+        /* Génération du code assembleur 8086 */
+        generer_asm("output.asm");
     }
     else
     {
