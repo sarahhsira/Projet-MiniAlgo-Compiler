@@ -1,0 +1,15 @@
+PROGRAM TEST
+
+DECL
+INTEGER : A,B,C;
+ENDDECL
+
+BEGIN
+
+A = 5 ;
+B = 10 ;
+
+C = A + B ;
+C = A + B ;
+
+END
