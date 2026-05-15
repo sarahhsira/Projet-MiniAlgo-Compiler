@@ -18,7 +18,7 @@ extern int qc;
 void quadr(char op[], char arg1[], char arg2[], char result[]);
 void update_quad(int index, int pos, char value[]);
 void print_quad();
-void print_quad_optimise();
+void print_quad_apres_opt();
 char* nouveau_temp();
 
 #endif

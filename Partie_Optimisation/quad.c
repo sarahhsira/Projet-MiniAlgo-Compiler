@@ -39,25 +39,14 @@ void print_quad()
     }
     printf("\n");
 }
-
-void print_quad_optimise()
+void print_quad_apres_opt()
 {
-    printf("\n************ Quadruplets APRES optimisation ************\n");
-
-    for(int i=0 ; i<qc ; i++)
+    printf("\n********************* Quadruplets APRÈS Optimisation ***********************\n");
+    for(int i = 0; i < qc; i++)
     {
-        if(strcmp(quad[i].op, "SUPPRIME") != 0)
-        {
-            printf("\n%d - ( %s , %s , %s , %s )",
-                   i,
-                   quad[i].op,
-                   quad[i].arg1,
-                   quad[i].arg2,
-                   quad[i].result);
-
-            printf("\n------------------------------------------------");
-        }
+        printf("\n%d - ( %s  ,  %s  ,  %s  ,  %s )",
+               i, quad[i].op, quad[i].arg1, quad[i].arg2, quad[i].result);
+        printf("\n------------------------------------------------------------");
     }
-
     printf("\n");
 }

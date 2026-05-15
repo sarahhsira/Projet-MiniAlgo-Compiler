@@ -376,8 +376,9 @@ int main()
         printf("Analyses lexicale et syntaxique réussies.\n");
         afficher();
         print_quad();
-        optimiser();
-        print_quad_optimise();
+
+        optimiser_tout();
+        print_quad_apres_opt();
     }
     else
     {
