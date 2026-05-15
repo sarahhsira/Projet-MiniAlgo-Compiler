@@ -378,7 +378,7 @@ int main()
         print_quad();
 
         optimiser_tout();
-        print_quad_apres_opt();
+        print_quad_optimise();
     }
     else
     {

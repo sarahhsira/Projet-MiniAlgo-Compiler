@@ -8,5 +8,5 @@ void propagation_expression();
 void optimiser_expressions_redondantes();
 void optimiser_simplification_algebrique();
 void optimiser_code_mort();
-void optimiser_tout();
+void optimiser_tout(void);
 #endif

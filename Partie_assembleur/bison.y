@@ -377,7 +377,8 @@ int main()
         printf("Analyses lexicale et syntaxique réussies.\n");
         afficher();
         print_quad();
-        optimiser();
+
+        optimiser_tout();
         print_quad_optimise();
         /* Génération du code assembleur 8086 */
         generer_asm("output.asm");
