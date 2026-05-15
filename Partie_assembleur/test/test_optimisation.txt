@@ -1,0 +1,76 @@
+//code optimal
+PROGRAM TEST
+DECL
+    INTEGER: X, Y, Z;
+ENDDECL
+BEGIN
+    X = 10; 
+    Y = 20; 
+    Z = X + y ; 
+END
+
+
+// Propagation copie
+PROGRAM test
+DECL
+INTEGER:a,b,c;
+ENDDECL
+
+BEGIN
+
+a=5;
+b=a;
+c = b + 4 ;
+END
+
+//Propagation d expression
+
+PROGRAM TEST
+DECL
+    INTEGER: t1,t2,j;
+ENDDECL
+BEGIN
+    t1 = j + 1;
+    t2 = t1 - 1;
+
+END
+
+
+// Elimination expression redondante
+PROGRAM test
+DECL
+INTEGER:a,b,c,d;
+ENDDECL
+
+BEGIN
+
+a = b + c;
+
+d =b + c;
+
+END
+
+// Simplification algebrique 
+
+PROGRAM test
+DECL
+INTEGER: x ;
+ENDDECL
+
+BEGIN
+
+x = x*2;
+
+END
+
+
+// Élimination de code mort
+PROGRAM TEST
+DECL
+    INTEGER: X, Y, T1;
+ENDDECL
+BEGIN
+    T1 = 10;
+    X = 20;
+    Y = X;
+END
